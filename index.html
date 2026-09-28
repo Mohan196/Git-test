@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- ARTIFACT-START -->
+<title>Pocket Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f3f5f2;
+    --surface: #fcfcfb;
+    --surface-2: #eef1ed;
+    --ink: #121715;
+    --ink-2: #4c5652;
+    --muted: #7a8480;
+    --line: #dfe4df;
+    --grid: #e9ece8;
+    --accent: #1d4d45;
+    --accent-ink: #ffffff;
+    --good: #0ca30c; --good-ink: #0a6b0a;
+    --warn: #fab219; --warn-ink: #8a5a00;
+    --bad: #d03b3b;  --bad-ink: #b02a2a;
+    --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100;
+    --c5: #e87ba4; --c6: #008300; --c7: #4a3aa7; --c8: #e34948;
+    --ghost: #b8c0bc;
+    --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #101312; --surface: #1a1d1c; --surface-2: #232826;
+      --ink: #f1f4f2; --ink-2: #bcc5c1; --muted: #8b9591;
+      --line: #2e3432; --grid: #262b29;
+      --accent: #7fcdbd; --accent-ink: #0d1f1b;
+      --good-ink: #5fd35f; --warn-ink: #fab219; --bad-ink: #f07a7a;
+      --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500;
+      --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767;
+      --ghost: #4d5552;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #101312; --surface: #1a1d1c; --surface-2: #232826;
+    --ink: #f1f4f2; --ink-2: #bcc5c1; --muted: #8b9591;
+    --line: #2e3432; --grid: #262b29;
+    --accent: #7fcdbd; --accent-ink: #0d1f1b;
+    --good-ink: #5fd35f; --warn-ink: #fab219; --bad-ink: #f07a7a;
+    --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500;
+    --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767;
+    --ghost: #4d5552;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 14px/1.5 var(--sans);
+    padding-inline: 16px;
+    padding-block: 20px 48px;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; display: grid; gap: 16px; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  /* Header */
+  header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; padding-block: 4px 8px; }
+  .brand h1 { font: 700 clamp(26px, 4vw, 36px)/1.05 var(--display); margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+  .brand p { margin: 4px 0 0; color: var(--ink-2); }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  label.inline { display: flex; flex-direction: column; gap: 2px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  select, input, button { font: inherit; color: inherit; }
+  select, input {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+    padding: 7px 10px; min-height: 36px; color: var(--ink);
+  }
+  select:focus-visible, input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn {
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    border-radius: 8px; padding: 7px 14px; min-height: 36px; cursor: pointer; font-weight: 500;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.danger-armed { border-color: var(--bad); color: var(--bad-ink); }
+
+  .notice {
+    display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between;
+    background: var(--surface-2); border: 1px dashed var(--line); border-radius: 10px; padding: 10px 14px; color: var(--ink-2);
+  }
+  .notice strong { color: var(--ink); }
+
+  /* KPI tiles */
+  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 6px; align-content: start; }
+  .kpi .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); font-weight: 600; }
+  .kpi .value { font: 500 clamp(22px, 2.6vw, 30px)/1.1 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .kpi .sub { color: var(--ink-2); font-size: 13px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .meter { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+  .meter > span { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+
+  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px 1px 6px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid currentColor; line-height: 1.6; white-space: nowrap; }
+  .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--dot); }
+  .pill.good { color: var(--good-ink); --dot: var(--good); }
+  .pill.warn { color: var(--warn-ink); --dot: var(--warn); }
+  .pill.bad  { color: var(--bad-ink);  --dot: var(--bad); }
+  .delta.up { color: var(--bad-ink); } .delta.down { color: var(--good-ink); }
+
+  /* Panels */
+  .grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+  .panel h2 { font: 600 16px/1.3 var(--display); margin: 0; letter-spacing: -0.01em; }
+  .panel .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .panel .hint { color: var(--muted); font-size: 12px; }
+  .span-8 { grid-column: span 8; } .span-7 { grid-column: span 7; } .span-5 { grid-column: span 5; } .span-4 { grid-column: span 4; }
+  .stack { display: grid; gap: 16px; align-content: start; min-width: 0; }
+  .chart-box { position: relative; height: 280px; }
+  .chart-box.short { height: 200px; }
+  .chart-box.tall { height: 400px; }
+  .chart-box.mid { height: 340px; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 10px; height: 10px; border-radius: 3px; background: var(--c); flex: none; }
+  .swatch.line { height: 2px; border-radius: 1px; width: 14px; }
+  .swatch.dash { height: 0; width: 14px; border-top: 2px dashed var(--c); background: none; }
+
+  /* Donut */
+  .donut-wrap { position: relative; height: 220px; }
+  .donut-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
+  .donut-center .v { font: 500 20px/1.1 var(--mono); font-variant-numeric: tabular-nums; }
+  .donut-center .l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+  .cat-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+  .cat-list li { display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px; align-items: center; padding: 5px 4px; border-radius: 6px; }
+  .cat-list li:hover { background: var(--surface-2); }
+  .cat-list .amt { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .cat-list .pct { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--muted); width: 3.5em; text-align: right; }
+
+  /* Budgets */
+  .budgets { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+  .budgets li { display: grid; gap: 5px; }
+  .budgets .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .budgets .name { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; }
+  .budgets .fig { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink-2); display: inline-flex; align-items: center; gap: 4px; }
+  .budgets input { width: 92px; min-height: 28px; padding: 2px 6px; font-family: var(--mono); font-size: 13px; text-align: right; }
+  .bar { position: relative; height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+  .bar > span { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--c); }
+  .bar.over > span { background: repeating-linear-gradient(135deg, var(--c) 0 6px, color-mix(in srgb, var(--c) 60%, var(--surface)) 6px 9px); }
+
+  /* Form */
+  form.add { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  form.add .full { grid-column: 1 / -1; }
+  form.add label { display: grid; gap: 4px; font-size: 12px; color: var(--ink-2); font-weight: 500; }
+  form.add input, form.add select { width: 100%; }
+  .form-msg { font-size: 13px; min-height: 1.5em; color: var(--ink-2); }
+  .form-msg.err { color: var(--bad-ink); }
+
+  /* Transactions */
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 3px 10px; font-size: 12px; cursor: pointer; min-height: 28px; }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .chip .swatch { width: 8px; height: 8px; border-radius: 50%; }
+  .table-scroll { overflow-x: auto; max-height: 460px; overflow-y: auto; border-top: 1px solid var(--line); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th { position: sticky; top: 0; background: var(--surface); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+  td.amt, th.amt { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  td.note { white-space: normal; min-width: 140px; color: var(--ink-2); }
+  .cat-tag { display: inline-flex; align-items: center; gap: 6px; }
+  .del { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; padding: 4px 8px; border-radius: 6px; }
+  .del:hover { color: var(--bad-ink); background: var(--surface-2); }
+  .empty { color: var(--muted); padding: 16px 4px; text-align: center; }
+  .foot { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; color: var(--ink-2); font-size: 13px; }
+
+  @media (max-width: 1000px) {
+    .span-8, .span-7, .span-5, .span-4 { grid-column: 1 / -1; }
+    .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 460px) {
+    .kpis { grid-template-columns: 1fr; }
+    form.add { grid-template-columns: 1fr; }
+    .chart-box, .chart-box.tall, .chart-box.mid { height: 260px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+<!-- ARTIFACT-HEAD-END -->
+</head>
+<body>
+<!-- ARTIFACT-BODY-START -->
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Pocket Ledger</h1>
+      <p>Where your money went, by month and by category.</p>
+    </div>
+    <div class="controls">
+      <label class="inline" for="monthSel">Month
+        <select id="monthSel"></select>
+      </label>
+      <label class="inline" for="curSel">Currency
+        <select id="curSel">
+          <option value="INR">₹ INR</option>
+          <option value="USD">$ USD</option>
+          <option value="EUR">€ EUR</option>
+          <option value="GBP">£ GBP</option>
+        </select>
+      </label>
+    </div>
+  </header>
+
+  <div class="notice" id="sampleNotice" hidden>
+    <span><strong>You're looking at sample data.</strong> Add your own expenses below, or clear the sample to start fresh. Everything is saved in this browser only.</span>
+    <button class="btn" id="clearBtn" type="button">Clear sample data</button>
+  </div>
+
+  <section class="kpis" aria-label="Month summary">
+    <div class="kpi">
+      <span class="label">Spent this month</span>
+      <span class="value" id="kSpent">—</span>
+      <span class="sub" id="kSpentSub"></span>
+    </div>
+    <div class="kpi">
+      <span class="label">Budget remaining</span>
+      <span class="value" id="kLeft">—</span>
+      <div class="meter" aria-hidden="true"><span id="kMeter" style="width:0%"></span></div>
+      <span class="sub" id="kLeftSub"></span>
+    </div>
+    <div class="kpi">
+      <span class="label">Daily average</span>
+      <span class="value" id="kDaily">—</span>
+      <span class="sub" id="kDailySub"></span>
+    </div>
+    <div class="kpi">
+      <span class="label">Top category</span>
+      <span class="value" id="kTop" style="font-family:var(--display);font-weight:600;letter-spacing:-0.01em">—</span>
+      <span class="sub" id="kTopSub"></span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="panel span-8">
+      <div class="head"><h2>Six-month spending by category</h2><span class="hint">Hover a bar for the breakdown</span></div>
+      <div class="legend" id="catLegend"></div>
+      <div class="chart-box tall"><canvas id="trendChart" aria-label="Stacked bar chart of monthly spending by category"></canvas></div>
+    </div>
+    <div class="panel span-4">
+      <div class="head"><h2>Where it went</h2><span class="hint" id="donutHint"></span></div>
+      <div class="donut-wrap">
+        <canvas id="donutChart" aria-label="Donut chart of spending share by category"></canvas>
+        <div class="donut-center"><span class="v num" id="donutTotal">—</span><span class="l">total</span></div>
+      </div>
+      <ul class="cat-list" id="catList"></ul>
+    </div>
+
+    <div class="panel span-7">
+      <div class="head"><h2>Running total vs. budget pace</h2><span class="hint">Cumulative spend through the month</span></div>
+      <div class="legend">
+        <span><i class="swatch line" style="--c:var(--c1)"></i>This month</span>
+        <span><i class="swatch line" style="--c:var(--ghost)"></i>Previous month</span>
+        <span><i class="swatch dash" style="--c:var(--muted)"></i>Budget pace</span>
+      </div>
+      <div class="chart-box mid"><canvas id="paceChart" aria-label="Line chart of cumulative spending against budget pace"></canvas></div>
+    </div>
+    <div class="panel span-5">
+      <div class="head"><h2>Category budgets</h2><span class="hint">Edit a limit to change it</span></div>
+      <ul class="budgets" id="budgetList"></ul>
+    </div>
+
+    <div class="stack span-4">
+      <div class="panel">
+        <h2>Add an expense</h2>
+        <form class="add" id="addForm" novalidate>
+          <label for="fAmount">Amount
+            <input id="fAmount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" required>
+          </label>
+          <label for="fDate">Date
+            <input id="fDate" type="date" required>
+          </label>
+          <label class="full" for="fCat">Category
+            <select id="fCat"></select>
+          </label>
+          <label class="full" for="fNote">Note
+            <input id="fNote" type="text" maxlength="80" placeholder="e.g. Weekly groceries">
+          </label>
+          <button class="btn primary full" type="submit">Add expense</button>
+          <div class="form-msg full" id="formMsg" role="status"></div>
+        </form>
+      </div>
+      <div class="panel">
+        <div class="head"><h2>By day of week</h2><span class="hint">Selected month</span></div>
+        <div class="chart-box short"><canvas id="dowChart" aria-label="Bar chart of spending by day of week"></canvas></div>
+      </div>
+    </div>
+
+    <div class="panel span-8">
+      <div class="head">
+        <h2>Transactions</h2>
+        <input id="search" type="search" placeholder="Search notes" aria-label="Search notes" style="min-height:32px;padding:4px 10px">
+      </div>
+      <div class="filters" id="filters" role="group" aria-label="Filter by category"></div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Date</th><th>Category</th><th>Note</th><th class="amt">Amount</th><th><span class="sr" hidden>Actions</span></th></tr></thead>
+          <tbody id="txBody"></tbody>
+        </table>
+      </div>
+      <div class="foot"><span id="txCount"></span><span id="txSum" class="num"></span></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const CATS = [
+    { id: "housing",   name: "Housing",       v: "--c1", budget: 18000 },
+    { id: "food",      name: "Food & Dining", v: "--c2", budget: 12000 },
+    { id: "transport", name: "Transport",     v: "--c3", budget: 6000 },
+    { id: "utilities", name: "Utilities",     v: "--c4", budget: 4500 },
+    { id: "shopping",  name: "Shopping",      v: "--c5", budget: 6000 },
+    { id: "health",    name: "Health",        v: "--c6", budget: 3000 },
+    { id: "fun",       name: "Entertainment", v: "--c7", budget: 3500 },
+    { id: "other",     name: "Other",         v: "--c8", budget: 2500 },
+  ];
+  const CAT = Object.fromEntries(CATS.map(c => [c.id, c]));
+  const KEY = "pocket-ledger-v1";
+  const LOCALES = { INR: "en-IN", USD: "en-US", EUR: "en-IE", GBP: "en-GB" };
+
+  const pad = n => String(n).padStart(2, "0");
+  const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const ym = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+  const today = new Date();
+  const uid = () => Math.random().toString(36).slice(2, 10);
+
+  // ---------- Sample data (deterministic) ----------
+  function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function buildSample() {
+    const r = mulberry32(42);
+    const rand = (lo, hi) => Math.round((lo + r() * (hi - lo)) / 10) * 10;
+    const out = [];
+    for (let m = 5; m >= 0; m--) {
+      const first = new Date(today.getFullYear(), today.getMonth() - m, 1);
+      const dim = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+      const lastDay = m === 0 ? today.getDate() : dim;
+      const add = (day, cat, amount, note) => {
+        if (day > lastDay) return;
+        out.push({ id: uid(), date: ymd(new Date(first.getFullYear(), first.getMonth(), day)), cat, amount, note });
+      };
+      const any = () => 1 + Math.floor(r() * dim);
+      add(1, "housing", 18000, "Rent");
+      add(5, "utilities", rand(1600, 2700), "Electricity bill");
+      add(10, "utilities", 799, "Home internet");
+      add(12, "utilities", 399, "Mobile recharge");
+      for (let i = 0; i < 5; i++) add(any(), "food", rand(700, 2300), ["Groceries", "Vegetables & fruit", "Supermarket run", "Milk & bakery"][i % 4]);
+      for (let i = 0, n = 5 + Math.floor(r() * 5); i < n; i++) add(any(), "food", rand(220, 1300), ["Dinner out", "Lunch with team", "Food delivery", "Coffee & snacks", "Weekend brunch"][i % 5]);
+      for (let i = 0, n = 8 + Math.floor(r() * 6); i < n; i++) add(any(), "transport", rand(80, 420), ["Cab ride", "Auto", "Metro card top-up", "Parking"][i % 4]);
+      add(any(), "transport", rand(1500, 2400), "Fuel");
+      if (r() > 0.4) add(any(), "transport", rand(1500, 2400), "Fuel");
+      for (let i = 0, n = 2 + Math.floor(r() * 4); i < n; i++) add(any(), "shopping", rand(450, 3400), ["Clothes", "Household items", "Online order", "Shoes", "Gift"][i % 5]);
+      for (let i = 0, n = 1 + Math.floor(r() * 2); i < n; i++) add(any(), "health", rand(300, 2400), ["Pharmacy", "Doctor visit", "Gym membership"][i % 3]);
+      add(3, "fun", 649, "Streaming subscription");
+      for (let i = 0, n = 1 + Math.floor(r() * 4); i < n; i++) add(any(), "fun", rand(250, 1600), ["Movie tickets", "Concert", "Games", "Books"][i % 4]);
+      for (let i = 0, n = 1 + Math.floor(r() * 3); i < n; i++) add(any(), "other", rand(200, 1400), ["Haircut", "Donation", "Stationery", "Laundry"][i % 4]);
+    }
+    return out;
+  }
+
+  // ---------- State ----------
+  function load() {
+    try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && Array.isArray(s.expenses)) return s; } catch (e) {}
+    return { expenses: buildSample(), budgets: Object.fromEntries(CATS.map(c => [c.id, c.budget])), currency: "INR", sample: true };
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  const state = load();
+  CATS.forEach(c => { if (typeof state.budgets[c.id] !== "number") state.budgets[c.id] = c.budget; });
+  let month = ym(today);
+  let filterCat = "all";
+  let query = "";
+
+  let fmt, fmtShort;
+  function setCurrency() {
+    const loc = LOCALES[state.currency] || "en-US";
+    fmt = new Intl.NumberFormat(loc, { style: "currency", currency: state.currency, maximumFractionDigits: 0 });
+    fmtShort = new Intl.NumberFormat("en-US", { style: "currency", currency: state.currency, notation: "compact", maximumFractionDigits: 1 });
+  }
+  const money = v => fmt.format(v);
+
+  // ---------- Helpers ----------
+  const $ = id => document.getElementById(id);
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const color = c => css(CAT[c].v);
+  const inMonth = key => state.expenses.filter(e => e.date.startsWith(key));
+  const sum = arr => arr.reduce((a, e) => a + e.amount, 0);
+  const monthDate = key => { const [y, m] = key.split("-").map(Number); return new Date(y, m - 1, 1); };
+  const shiftMonth = (key, n) => { const d = monthDate(key); return ym(new Date(d.getFullYear(), d.getMonth() + n, 1)); };
+  const monthLabel = (key, style = "long") => monthDate(key).toLocaleDateString("en-US", { month: style, year: "numeric" });
+  const daysIn = key => { const d = monthDate(key); return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); };
+  const byCat = list => { const o = Object.fromEntries(CATS.map(c => [c.id, 0])); list.forEach(e => { o[e.cat] = (o[e.cat] || 0) + e.amount; }); return o; };
+  const esc = s => String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  const totalBudget = () => CATS.reduce((a, c) => a + (state.budgets[c.id] || 0), 0);
+  const status = pct => pct > 1 ? ["bad", "Over budget"] : pct >= 0.8 ? ["warn", "Near limit"] : ["good", "On track"];
+
+  // ---------- Controls ----------
+  function fillMonths() {
+    const keys = new Set(state.expenses.map(e => e.date.slice(0, 7)));
+    keys.add(ym(today));
+    const sorted = [...keys].sort().reverse();
+    if (!sorted.includes(month)) month = sorted[0];
+    $("monthSel").innerHTML = sorted.map(k => `<option value="${k}"${k === month ? " selected" : ""}>${monthLabel(k)}</option>`).join("");
+  }
+  $("monthSel").addEventListener("change", e => { month = e.target.value; render(); });
+  $("curSel").value = state.currency;
+  $("curSel").addEventListener("change", e => { state.currency = e.target.value; save(); setCurrency(); render(); });
+  $("fCat").innerHTML = CATS.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+  $("fDate").value = ymd(today);
+  $("catLegend").innerHTML = CATS.map(c => `<span><i class="swatch" style="--c:var(${c.v})"></i>${c.name}</span>`).join("");
+
+  $("addForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const amount = parseFloat($("fAmount").value);
+    const date = $("fDate").value;
+    const msg = $("formMsg");
+    if (!(amount > 0)) { msg.className = "form-msg full err"; msg.textContent = "Enter an amount greater than zero."; $("fAmount").focus(); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { msg.className = "form-msg full err"; msg.textContent = "Pick a date for this expense."; $("fDate").focus(); return; }
+    const cat = $("fCat").value;
+    const note = $("fNote").value.trim() || CAT[cat].name;
+    state.expenses.push({ id: uid(), date, cat, amount: Math.round(amount * 100) / 100, note });
+    save();
+    month = date.slice(0, 7);
+    msg.className = "form-msg full";
+    msg.textContent = `Added ${money(amount)} to ${CAT[cat].name}.`;
+    $("fAmount").value = ""; $("fNote").value = "";
+    render();
+  });
+
+  let clearArmed = false;
+  $("clearBtn").addEventListener("click", () => {
+    const b = $("clearBtn");
+    if (!clearArmed) { clearArmed = true; b.textContent = "Click again to clear"; b.classList.add("danger-armed"); setTimeout(() => { clearArmed = false; b.textContent = "Clear sample data"; b.classList.remove("danger-armed"); }, 4000); return; }
+    state.expenses = []; state.sample = false; save(); month = ym(today); render();
+  });
+
+  $("search").addEventListener("input", e => { query = e.target.value.toLowerCase(); renderTable(); });
+
+  // ---------- Charts ----------
+  const charts = {};
+  function baseOpts() {
+    const ink2 = css("--ink-2"), grid = css("--grid"), surface = css("--surface"), ink = css("--ink"), line = css("--line");
+    return {
+      responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: surface, titleColor: ink, bodyColor: ink2, borderColor: line, borderWidth: 1,
+          padding: 10, cornerRadius: 8, boxPadding: 4, usePointStyle: true,
+          titleFont: { family: "IBM Plex Sans", weight: "600" }, bodyFont: { family: "IBM Plex Mono" },
+        },
+      },
+      scales: {
+        x: { grid: { display: false }, border: { color: line }, ticks: { color: ink2, font: { family: "IBM Plex Sans", size: 12 } } },
+        y: { beginAtZero: true, grid: { color: grid }, border: { display: false }, ticks: { color: ink2, font: { family: "IBM Plex Mono", size: 11 }, callback: v => fmtShort.format(v), maxTicksLimit: 6 } },
+      },
+    };
+  }
+  function makeChart(id, cfg) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart($(id), cfg); }
+
+  function renderTrend() {
+    const keys = Array.from({ length: 6 }, (_, i) => shiftMonth(month, i - 5));
+    const surface = css("--surface");
+    const datasets = CATS.map((c, i) => ({
+      label: c.name,
+      data: keys.map(k => byCat(inMonth(k))[c.id]),
+      backgroundColor: color(c.id),
+      borderColor: surface,
+      borderWidth: { top: 2, left: 0, right: 0, bottom: 0 },
+      borderRadius: i === CATS.length - 1 ? { topLeft: 4, topRight: 4 } : 0,
+      borderSkipped: "bottom",
+      maxBarThickness: 44,
+      stack: "s",
+    }));
+    const opts = baseOpts();
+    opts.scales.x.stacked = true; opts.scales.y.stacked = true;
+    opts.interaction = { mode: "index", intersect: false };
+    opts.plugins.tooltip.itemSort = (a, b) => b.raw - a.raw;
+    opts.plugins.tooltip.filter = item => item.raw > 0;
+    opts.plugins.tooltip.callbacks = {
+      label: ctx => ` ${ctx.dataset.label}: ${money(ctx.raw)}`,
+      footer: items => `Total: ${money(items.reduce((a, i) => a + i.raw, 0))}`,
+    };
+    opts.plugins.tooltip.footerFont = { family: "IBM Plex Mono", weight: "600" };
+    opts.plugins.tooltip.footerColor = css("--ink");
+    makeChart("trendChart", { type: "bar", data: { labels: keys.map(k => monthDate(k).toLocaleDateString("en-US", { month: "short" }) + (k === month ? " ●" : "")), datasets }, options: opts });
+  }
+
+  function renderDonut(cats, total) {
+    const surface = css("--surface");
+    const order = CATS.filter(c => cats[c.id] > 0);
+    makeChart("donutChart", {
+      type: "doughnut",
+      data: { labels: order.map(c => c.name), datasets: [{ data: order.map(c => cats[c.id]), backgroundColor: order.map(c => color(c.id)), borderColor: surface, borderWidth: 2, hoverOffset: 6, borderRadius: 3 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: "70%", layout: { padding: 6 },
+        plugins: {
+          legend: { display: false },
+          tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: ctx => ` ${money(ctx.raw)} · ${((ctx.raw / total) * 100).toFixed(1)}%` } },
+        },
+      },
+    });
+    $("donutTotal").textContent = money(total);
+    $("donutHint").textContent = monthLabel(month, "short");
+    const sorted = [...CATS].sort((a, b) => cats[b.id] - cats[a.id]);
+    $("catList").innerHTML = sorted.map(c => `<li><i class="swatch" style="--c:var(${c.v})"></i><span>${c.name}</span><span class="amt">${money(cats[c.id])}</span><span class="pct">${total ? Math.round(cats[c.id] / total * 100) : 0}%</span></li>`).join("");
+  }
+
+  function renderPace() {
+    const dim = daysIn(month);
+    const isCurrent = month === ym(today);
+    const lastDay = isCurrent ? today.getDate() : dim;
+    const cum = key => {
+      const n = daysIn(key); const daily = Array(n).fill(0);
+      inMonth(key).forEach(e => { daily[Number(e.date.slice(8, 10)) - 1] += e.amount; });
+      let run = 0; return daily.map(v => (run += v));
+    };
+    const cur = cum(month).map((v, i) => (i < lastDay ? v : null));
+    const prevRaw = cum(shiftMonth(month, -1));
+    const prev = Array.from({ length: dim }, (_, i) => prevRaw[Math.min(i, prevRaw.length - 1)]);
+    const tb = totalBudget();
+    const pace = Array.from({ length: dim }, (_, i) => Math.round(tb * (i + 1) / dim));
+    const c1 = css("--c1"), ghost = css("--ghost"), muted = css("--muted"), surface = css("--surface");
+    const opts = baseOpts();
+    opts.interaction = { mode: "index", intersect: false };
+    opts.scales.x.ticks.maxTicksLimit = 10;
+    opts.scales.x.ticks.autoSkip = true;
+    opts.plugins.tooltip.callbacks = {
+      title: items => monthDate(month).toLocaleDateString("en-US", { month: "short" }) + " " + items[0].label,
+      label: ctx => ctx.raw == null ? null : ` ${ctx.dataset.label}: ${money(ctx.raw)}`,
+    };
+    opts.plugins.tooltip.filter = item => item.raw != null;
+    makeChart("paceChart", {
+      type: "line",
+      data: {
+        labels: Array.from({ length: dim }, (_, i) => i + 1),
+        datasets: [
+          { label: "This month", data: cur, borderColor: c1, backgroundColor: c1 + "22", fill: "origin", borderWidth: 2, tension: 0.25, pointRadius: cur.map((v, i) => i === lastDay - 1 ? 5 : 0), pointBackgroundColor: c1, pointBorderColor: surface, pointBorderWidth: 2, pointHoverRadius: 5, order: 1 },
+          { label: "Previous month", data: prev, borderColor: ghost, borderWidth: 2, tension: 0.25, pointRadius: 0, pointHoverRadius: 4, fill: false, order: 2 },
+          { label: "Budget pace", data: pace, borderColor: muted, borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0, fill: false, order: 3 },
+        ],
+      },
+      options: opts,
+    });
+  }
+
+  function renderDow(list) {
+    const names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const vals = Array(7).fill(0);
+    list.forEach(e => { const [y, m, d] = e.date.split("-").map(Number); vals[(new Date(y, m - 1, d).getDay() + 6) % 7] += e.amount; });
+    const opts = baseOpts();
+    opts.scales.y.ticks.maxTicksLimit = 4;
+    opts.plugins.tooltip.callbacks = { label: ctx => ` ${money(ctx.raw)}` };
+    makeChart("dowChart", { type: "bar", data: { labels: names, datasets: [{ label: "Spent", data: vals, backgroundColor: css("--c1"), borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: "bottom", maxBarThickness: 28 }] }, options: opts });
+  }
+
+  // ---------- KPI / budgets / table ----------
+  function renderKpis(list, cats, total) {
+    const prevTotal = sum(inMonth(shiftMonth(month, -1)));
+    $("kSpent").textContent = money(total);
+    if (prevTotal > 0) {
+      const d = (total - prevTotal) / prevTotal;
+      const isCurrent = month === ym(today);
+      $("kSpentSub").innerHTML = `<span class="delta ${d > 0 ? "up" : "down"} num">${d > 0 ? "▲" : "▼"} ${Math.abs(d * 100).toFixed(0)}%</span> vs ${money(prevTotal)} ${isCurrent ? "all of" : "in"} ${monthDate(shiftMonth(month, -1)).toLocaleDateString("en-US", { month: "short" })}`;
+    } else $("kSpentSub").textContent = `${list.length} transactions`;
+
+    const tb = totalBudget(); const pct = tb ? total / tb : 0; const [cls, lbl] = status(pct);
+    $("kLeft").textContent = money(tb - total);
+    $("kMeter").style.width = Math.min(100, pct * 100).toFixed(1) + "%";
+    $("kMeter").style.background = `var(--${cls})`;
+    $("kLeftSub").innerHTML = `<span class="pill ${cls}">${lbl}</span><span class="num">${Math.round(pct * 100)}% of ${money(tb)}</span>`;
+
+    const isCurrent = month === ym(today);
+    const days = isCurrent ? today.getDate() : daysIn(month);
+    $("kDaily").textContent = money(days ? total / days : 0);
+    if (isCurrent) {
+      const proj = days ? total / days * daysIn(month) : 0;
+      $("kDailySub").innerHTML = `Projected month: <span class="num">${money(proj)}</span>`;
+    } else $("kDailySub").textContent = `Across ${days} days`;
+
+    const top = [...CATS].sort((a, b) => cats[b.id] - cats[a.id])[0];
+    if (total > 0) {
+      $("kTop").textContent = top.name;
+      $("kTopSub").innerHTML = `<i class="swatch" style="--c:var(${top.v})"></i><span class="num">${money(cats[top.id])}</span> · ${Math.round(cats[top.id] / total * 100)}% of spending`;
+    } else { $("kTop").textContent = "—"; $("kTopSub").textContent = "No spending yet"; }
+  }
+
+  function renderBudgets(cats) {
+    $("budgetList").innerHTML = CATS.map(c => {
+      const b = state.budgets[c.id] || 0, s = cats[c.id]; const pct = b ? s / b : (s ? 2 : 0); const [cls, lbl] = status(pct);
+      return `<li>
+        <div class="row">
+          <span class="name"><i class="swatch" style="--c:var(${c.v})"></i>${c.name} <span class="pill ${cls}">${lbl}</span></span>
+          <span class="fig">${money(s)} /
+            <input type="number" min="0" step="100" id="bud-${c.id}" data-cat="${c.id}" value="${b}" aria-label="${c.name} monthly budget"></span>
+        </div>
+        <div class="bar${pct > 1 ? " over" : ""}" style="--c:var(${c.v})" role="img" aria-label="${c.name}: ${Math.round(pct * 100)}% of budget used"><span style="width:${Math.min(100, pct * 100).toFixed(1)}%"></span></div>
+      </li>`;
+    }).join("");
+    $("budgetList").querySelectorAll("input").forEach(inp => inp.addEventListener("change", e => {
+      const v = Math.max(0, parseFloat(e.target.value) || 0);
+      state.budgets[e.target.dataset.cat] = v; save(); render();
+    }));
+  }
+
+  function renderFilters() {
+    const chips = [{ id: "all", name: "All" }, ...CATS];
+    $("filters").innerHTML = chips.map(c => `<button type="button" class="chip" data-cat="${c.id}" aria-pressed="${filterCat === c.id}">${c.v ? `<i class="swatch" style="--c:var(${c.v})"></i>` : ""}${c.name}</button>`).join("");
+    $("filters").querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => { filterCat = b.dataset.cat; renderFilters(); renderTable(); }));
+  }
+
+  function renderTable() {
+    let list = inMonth(month).filter(e => (filterCat === "all" || e.cat === filterCat) && (!query || e.note.toLowerCase().includes(query)));
+    list.sort((a, b) => b.date.localeCompare(a.date) || b.amount - a.amount);
+    $("txBody").innerHTML = list.length ? list.map(e => {
+      const [y, m, d] = e.date.split("-").map(Number);
+      const ds = new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+      return `<tr><td>${ds}</td><td><span class="cat-tag"><i class="swatch" style="--c:var(${CAT[e.cat].v})"></i>${CAT[e.cat].name}</span></td><td class="note">${esc(e.note)}</td><td class="amt">${money(e.amount)}</td><td><button class="del" data-id="${e.id}" aria-label="Delete ${esc(e.note)}" title="Delete">×</button></td></tr>`;
+    }).join("") : `<tr><td colspan="5" class="empty">No expenses match. Add one with the form, or change the filter.</td></tr>`;
+    $("txBody").querySelectorAll(".del").forEach(b => b.addEventListener("click", () => {
+      state.expenses = state.expenses.filter(e => e.id !== b.dataset.id); save(); render();
+    }));
+    $("txCount").textContent = `${list.length} transaction${list.length === 1 ? "" : "s"}`;
+    $("txSum").textContent = `Total ${money(sum(list))}`;
+  }
+
+  function render() {
+    fillMonths();
+    $("sampleNotice").hidden = !state.sample;
+    const list = inMonth(month), cats = byCat(list), total = sum(list);
+    renderKpis(list, cats, total);
+    renderTrend();
+    renderDonut(cats, total);
+    renderPace();
+    renderBudgets(cats);
+    renderDow(list);
+    renderFilters();
+    renderTable();
+  }
+
+  function start() {
+    setCurrency();
+    if (window.Chart) { Chart.defaults.font.family = "IBM Plex Sans, system-ui, sans-serif"; }
+    render();
+  }
+
+  // Re-render charts when the theme changes so they pick up the new tokens.
+  const rerender = () => { if (window.Chart) render(); };
+  try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", rerender); } catch (e) {}
+  new MutationObserver(rerender).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (charts.trendChart) render(); });
+  start();
+})();
+</script>
+<!-- ARTIFACT-BODY-END -->
+</body>
+</html>
