@@ -35,8 +35,9 @@ test("a fresh database is uninitialized with default budgets", async () => {
   const { body } = await call("GET", "/api/state");
   assert.equal(body.initialized, false);
   assert.equal(body.currency, "INR");
-  assert.equal(body.budgets.emi, 12200);
-  assert.equal(body.budgets.sip, 8000);
+  assert.equal(body.budgets.housing, 18000);
+  assert.equal(body.budgets.other, 2500);
+  assert.equal(body.budgets.emi, undefined);
   assert.deepEqual(body.expenses, []);
 });
 
@@ -44,8 +45,8 @@ test("import loads a ledger once and refuses to overwrite without replace", asyn
   const ledger = {
     expenses: [
       { id: "seed0001", date: "2026-09-01", category: "housing", amount: 18000, note: "Rent" },
-      { id: "seed0002", date: "2026-09-05", category: "emi", amount: 9800, note: "Car loan EMI" },
-      { id: "seed0003", date: "2026-08-07", category: "sip", amount: 5000, note: "Index fund SIP" },
+      { id: "seed0002", date: "2026-09-05", category: "health", amount: 9800, note: "Hospital bill" },
+      { id: "seed0003", date: "2026-08-07", category: "shopping", amount: 5000, note: "New phone" },
     ],
     budgets: { food: 10000 },
     currency: "INR",
@@ -88,6 +89,7 @@ test("invalid input is rejected with a helpful message", async () => {
   const cases = [
     { date: "2026-02-30", category: "food", amount: 10 },
     { date: "2026-09-10", category: "crypto", amount: 10 },
+    { date: "2026-09-10", category: "sip", amount: 10 },
     { date: "2026-09-10", category: "food", amount: -5 },
     { date: "2026-09-10", category: "food", amount: "10" },
     { date: "2026-09-10", category: "food", amount: 10, id: "a b" },
@@ -105,9 +107,10 @@ test("invalid input is rejected with a helpful message", async () => {
 });
 
 test("budgets and currency can be changed", async () => {
-  const b = await call("PUT", "/api/budgets/emi", { amount: 15000 });
-  assert.equal(b.body.emi, 15000);
-  assert.equal((await call("PUT", "/api/budgets/emi", { amount: -1 })).status, 400);
+  const b = await call("PUT", "/api/budgets/health", { amount: 15000 });
+  assert.equal(b.body.health, 15000);
+  assert.equal((await call("PUT", "/api/budgets/health", { amount: -1 })).status, 400);
+  assert.equal((await call("PUT", "/api/budgets/emi", { amount: 1 })).status, 404);
   assert.equal((await call("PUT", "/api/budgets/nothing", { amount: 1 })).status, 404);
 
   assert.deepEqual((await call("PUT", "/api/settings", { currency: "USD" })).body, { currency: "USD" });
@@ -118,9 +121,9 @@ test("budgets and currency can be changed", async () => {
 test("summary totals a month by category", async () => {
   const { body } = await call("GET", "/api/summary?month=2026-09");
   assert.equal(body.month, "2026-09");
-  const emi = body.categories.find(c => c.id === "emi");
-  assert.equal(emi.spent, 9800);
-  assert.equal(emi.budget, 15000);
+  const health = body.categories.find(c => c.id === "health");
+  assert.equal(health.spent, 9800);
+  assert.equal(health.budget, 15000);
   assert.equal(body.total, body.categories.reduce((a, c) => a + c.spent, 0));
   assert.equal((await call("GET", "/api/summary")).status, 400);
 });
@@ -139,7 +142,7 @@ test("clearing removes all expenses and turns off the sample flag", async () => 
   const { body } = await call("GET", "/api/state");
   assert.deepEqual(body.expenses, []);
   assert.equal(body.sample, false);
-  assert.equal(body.budgets.emi, 15000);
+  assert.equal(body.budgets.health, 15000);
 });
 
 test("APP_PASSWORD turns on a login", async () => {

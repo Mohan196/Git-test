@@ -33,6 +33,13 @@ export function openDb(path) {
   db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;");
   db.exec(SCHEMA);
 
+  // SIP and EMI were retired as categories: drop them from sample data, move the user's own entries to Other.
+  const isSample = db.prepare("SELECT value FROM settings WHERE key = 'sample'").get()?.value === "true";
+  db.prepare(isSample
+    ? "DELETE FROM expenses WHERE category IN ('sip', 'emi')"
+    : "UPDATE expenses SET category = 'other' WHERE category IN ('sip', 'emi')").run();
+  db.prepare("DELETE FROM budgets WHERE category IN ('sip', 'emi')").run();
+
   const insertBudget = db.prepare("INSERT OR IGNORE INTO budgets (category, amount) VALUES (?, ?)");
   for (const c of CATEGORIES) insertBudget.run(c.id, c.budget);
 

@@ -26,7 +26,6 @@
     --bad: #d03b3b;  --bad-ink: #b02a2a;
     --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100;
     --c5: #e87ba4; --c6: #008300; --c7: #4a3aa7; --c8: #e34948;
-    --c9: #0091b5; --c10: #9c5a0c;
     --ghost: #b8c0bc;
     --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
     --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
@@ -42,7 +41,6 @@
       --good-ink: #5fd35f; --warn-ink: #fab219; --bad-ink: #f07a7a;
       --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500;
       --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767;
-      --c9: #1a9cc4; --c10: #b0712a;
       --ghost: #4d5552;
     }
   }
@@ -55,11 +53,11 @@
     --good-ink: #5fd35f; --warn-ink: #fab219; --bad-ink: #f07a7a;
     --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500;
     --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767;
-      --c9: #1a9cc4; --c10: #b0712a;
     --ghost: #4d5552;
   }
 
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body { margin: 0; }
   body {
     background: var(--bg);
@@ -159,19 +157,6 @@
   .bar { position: relative; height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
   .bar > span { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--c); }
   .bar.over > span { background: repeating-linear-gradient(135deg, var(--c) 0 6px, color-mix(in srgb, var(--c) 60%, var(--surface)) 6px 9px); }
-
-  /* EMI & SIP */
-  .commit-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .commit { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; }
-  .commit .label { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
-  .commit .v { font-size: 18px; font-weight: 500; }
-  .commit .s { font-size: 12px; color: var(--ink-2); }
-  .commit-note { margin: 0; font-size: 13px; color: var(--ink-2); }
-  .commit-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-  .commit-list li { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 4px 2px; border-bottom: 1px solid var(--grid); font-size: 13px; }
-  .commit-list li:last-child { border-bottom: 0; }
-  .commit-list .d { color: var(--muted); font-size: 12px; }
-  .commit-list .a { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
   /* Form */
   form.add { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -315,15 +300,6 @@
         </form>
       </div>
       <div class="panel">
-        <div class="head"><h2>EMI &amp; SIP</h2><span class="hint" id="commitHint"></span></div>
-        <div class="commit-tiles">
-          <div class="commit"><span class="label"><i class="swatch" style="--c:var(--c10)"></i>EMIs paid</span><span class="v num" id="emiTotal">—</span><span class="s" id="emiSub"></span></div>
-          <div class="commit"><span class="label"><i class="swatch" style="--c:var(--c9)"></i>SIPs invested</span><span class="v num" id="sipTotal">—</span><span class="s" id="sipSub"></span></div>
-        </div>
-        <p class="commit-note" id="commitNote"></p>
-        <ul class="commit-list" id="commitList"></ul>
-      </div>
-      <div class="panel">
         <div class="head"><h2>By day of week</h2><span class="hint">Selected month</span></div>
         <div class="chart-box short"><canvas id="dowChart" aria-label="Bar chart of spending by day of week"></canvas></div>
       </div>
@@ -357,8 +333,6 @@
     { id: "health",    name: "Health",        v: "--c6", budget: 3000 },
     { id: "fun",       name: "Entertainment", v: "--c7", budget: 3500 },
     { id: "other",     name: "Other",         v: "--c8", budget: 2500 },
-    { id: "sip",       name: "SIP",           v: "--c9", budget: 8000 },
-    { id: "emi",       name: "EMI",           v: "--c10", budget: 12200 },
   ];
   const CAT = Object.fromEntries(CATS.map(c => [c.id, c]));
   const KEY = "pocket-ledger-v1";
@@ -398,10 +372,6 @@
       for (let i = 0, n = 1 + Math.floor(r() * 2); i < n; i++) add(any(), "health", rand(300, 2400), ["Pharmacy", "Doctor visit", "Gym membership"][i % 3]);
       add(3, "fun", 649, "Streaming subscription");
       for (let i = 0, n = 1 + Math.floor(r() * 4); i < n; i++) add(any(), "fun", rand(250, 1600), ["Movie tickets", "Concert", "Games", "Books"][i % 4]);
-      add(5, "emi", 9800, "Car loan EMI");
-      add(15, "emi", 2400, "Phone EMI");
-      add(7, "sip", 5000, "Nifty 50 index fund SIP");
-      add(10, "sip", 3000, "Flexi-cap fund SIP");
       for (let i = 0, n = 1 + Math.floor(r() * 3); i < n; i++) add(any(), "other", rand(200, 1400), ["Haircut", "Donation", "Stationery", "Laundry"][i % 4]);
     }
     return out;
@@ -419,11 +389,13 @@
   function saveLocal() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
   const state = readLocal() || sampleLedger();
   state.budgets = { ...DEFAULT_BUDGETS, ...state.budgets };
-  if (state.sample && !state.expenses.some(e => e.cat === "emi")) { state.expenses = buildSample(); saveLocal(); }
+  // Categories that no longer exist (the retired SIP and EMI): sample rows are regenerated, the user's own rows move to Other.
+  if (state.sample && state.expenses.some(e => !CAT[e.cat])) { state.expenses = buildSample(); saveLocal(); }
+  else if (state.expenses.some(e => !CAT[e.cat])) { state.expenses.forEach(e => { if (!CAT[e.cat]) e.cat = "other"; }); saveLocal(); }
 
   let serverMode = false;
   const toApi = e => ({ id: e.id, date: e.date, category: e.cat, amount: e.amount, note: e.note });
-  const fromApi = e => ({ id: e.id, date: e.date, cat: e.category, amount: e.amount, note: e.note });
+  const fromApi = e => ({ id: e.id, date: e.date, cat: CAT[e.category] ? e.category : "other", amount: e.amount, note: e.note });
   async function api(method, path, body) {
     const res = await fetch("api/" + path, {
       method, cache: "no-store",
@@ -705,23 +677,6 @@
     }));
   }
 
-  function renderCommitments(list, total) {
-    const emi = list.filter(e => e.cat === "emi"), sip = list.filter(e => e.cat === "sip");
-    const emiSum = sum(emi), sipSum = sum(sip);
-    const keys = Array.from({ length: 6 }, (_, i) => shiftMonth(month, i - 5));
-    const sip6 = keys.reduce((a, k) => a + sum(inMonth(k).filter(e => e.cat === "sip")), 0);
-    $("commitHint").textContent = monthLabel(month, "short");
-    $("emiTotal").textContent = money(emiSum);
-    $("emiSub").textContent = `${emi.length} payment${emi.length === 1 ? "" : "s"}`;
-    $("sipTotal").textContent = money(sipSum);
-    $("sipSub").textContent = `${sip.length} fund${sip.length === 1 ? "" : "s"}`;
-    $("commitNote").innerHTML = total
-      ? `EMI and SIP take <strong class="num">${Math.round((emiSum + sipSum) / total * 100)}%</strong> of this month's outflow. SIPs over the last 6 months: <strong class="num">${money(sip6)}</strong>.`
-      : "No EMI or SIP payments this month.";
-    const items = [...emi, ...sip].sort((a, b) => a.date.localeCompare(b.date));
-    $("commitList").innerHTML = items.map(e => `<li><i class="swatch" style="--c:var(${CAT[e.cat].v})"></i><span>${esc(e.note)} <span class="d">· ${Number(e.date.slice(8, 10))} ${monthDate(month).toLocaleDateString("en-US", { month: "short" })}</span></span><span class="a">${money(e.amount)}</span></li>`).join("");
-  }
-
   function renderFilters() {
     const chips = [{ id: "all", name: "All" }, ...CATS];
     $("filters").innerHTML = chips.map(c => `<button type="button" class="chip" data-cat="${c.id}" aria-pressed="${filterCat === c.id}">${c.v ? `<i class="swatch" style="--c:var(${c.v})"></i>` : ""}${c.name}</button>`).join("");
@@ -754,7 +709,6 @@
     renderDonut(cats, total);
     renderPace();
     renderBudgets(cats);
-    renderCommitments(list, total);
     renderDow(list);
     renderFilters();
     renderTable();

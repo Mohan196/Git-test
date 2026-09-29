@@ -3,7 +3,7 @@ This is testing git
 
 ## Pocket Ledger: personal expense tracker
 
-A personal expense dashboard with charts, budgets, expense categories, and EMI and SIP tracking. It comes in two parts:
+A personal expense dashboard with charts, budgets, and expense categories. It comes in two parts:
 
 - **Front end:** `index.html`, a single page written in HTML, CSS and plain JavaScript. It uses Chart.js for the charts.
 - **Back end:** `backend/`, a Node.js + Express REST API that stores your data in a SQLite database file.
@@ -14,11 +14,10 @@ A personal expense dashboard with charts, budgets, expense categories, and EMI a
 - Donut chart of this month's category split, with amounts and percentages
 - Running total vs. budget pace, compared with the previous month
 - Per-category budgets with editable limits and On track / Near limit / Over budget status
-- EMI & SIP panel: loan EMIs paid and SIP amounts invested this month, their share of total outflow, and SIP totals over the last six months
 - Spending by day of week
 - A transactions table you can filter by category and search, with delete
 
-**Categories:** Housing, Food & Dining, Transport, Utilities, Shopping, Health, Entertainment, Other, SIP and EMI.
+**Categories:** Housing, Food & Dining, Transport, Utilities, Shopping, Health, Entertainment and Other.
 
 ## Running it with the back end
 
@@ -85,5 +84,5 @@ Example:
 ```bash
 curl -X POST http://localhost:3000/api/expenses \
   -H "Content-Type: application/json" \
-  -d '{"date":"2026-09-29","category":"sip","amount":5000,"note":"Index fund SIP"}'
+  -d '{"date":"2026-09-29","category":"food","amount":450,"note":"Groceries"}'
 ```

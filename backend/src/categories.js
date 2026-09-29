@@ -8,8 +8,6 @@ export const CATEGORIES = [
   { id: "health",    name: "Health",        budget: 3000 },
   { id: "fun",       name: "Entertainment", budget: 3500 },
   { id: "other",     name: "Other",         budget: 2500 },
-  { id: "sip",       name: "SIP",           budget: 8000 },
-  { id: "emi",       name: "EMI",           budget: 12200 },
 ];
 
 export const CATEGORY_IDS = new Set(CATEGORIES.map(c => c.id));
